@@ -19,6 +19,8 @@ library(pROC)
 ## **1a) (5 pts)** Fit a glm assessing evidence for the following hypothesis: Seedling density is increased beneath trees experiencing mistletoe infection. Describe the rationale you used in selecting a glm structure and probability distribution. Calculate model fit using MAE.
 -->The data is structured with a categorical predictor and a discrete response variable. The assumptions for overdispersion were not met for a poisson distribution, therefore the negative binomial is the best distribution to describe this data. I calculated the MAE using the performance package, which gave me a value of 145.841. This is a high level of variability, suggesting that there may be another variable that influences seedling establishment. However, even if the estimates had been off by 145.841 we would still have been able to detect a difference between parasitized and unparasitized trees. Therefore, the model likely is sufficient for describing the variables of interest in this case.
 
+## ASW: lovely! Good to keep in mind that seedling values do range from 0 to >2000.
+
 ```{r}
 mistletoe<-read.csv("mistletoes.csv")
 
@@ -36,6 +38,8 @@ mean(mistletoe$Seedlings)  #extracting mae using the performance package and com
 ## **1b) (15 pts)** Use visual (e.g. a marginal effects plot) and written (e.g. effect sizes on scale of response) approaches to interpret the results of your model. 
 --> In the absence of mistletoe infection, an average of 13 seedlings established in the tree understory. In the presence of infection there are significantly more seedlings establishing, with an average of 308 seedlings per tree (p<0.05). This effect is visualized using the marginal effects package below, in which you see that the confidence intervals for each treatment do not overlap and that there is a jump in seedling establishment in the presence of parasite infection.
 
+##ASW: Excellent!
+
 ```{r}
 print(predictions(mistletoe_nbmod, 
                      newdata = datagrid(Treatment = "parasitized"),
@@ -49,6 +53,8 @@ plot_predictions(mistletoe_nbmod, condition="Treatment")
 ```
 ## **1c) (10 pts)** During the course of this study, 2012 was an atypically rainy year, compared to 2011. Fit an additional glm that quantifies how the effect of mistletoe differs between the two years in this study. Write ~2 new sentences that summarize the results of the new model and their biological implications.
 --> Year had a significant effect on seedling establishment under parasitized trees (p <0.05). Under parasitized trees we saw that in 2012 there were 328 more seedlings established than in 2011, suggesting that precipitation and interannual variation also influences seedling establishment.
+
+## ASW: In this case, an interaction term might better reflect the research question, capturing "how the effect of mistletoe varied by year". but great interpretation of the Year + treatment model here!
 
 ```{r}
 mistletoe$Year<-as.factor(mistletoe$Year)
@@ -64,9 +70,15 @@ print(predictions(mistletoe_nbmod_2,
 
 plot_predictions(mistletoe_nbmod_2, condition="Year")
 ```
+## 28/30
+
 # Question 2
 ## **2a) (5 pts)** Fit a glm (using a probability distribution of your choice) that reflects the following research question (including thinning as your only predictor and mortality as your response): Do forest thinning treatments reduce the probability of tree mortality? Interpret the results of the glm by writing 2-4 sentences about the biological significance of the effect of thinning, including descriptions of the sizes of the effect on the scale of the response variable, evidence for/against the hypothesis, and a metric of model fit.
 --> Forests in the study area that were not managed using thinning practices saw 73.0% of trees die back after the fire. In plots that had prior thinning management, we observed that tree mortality declined by 43.3%. This is a significant effect, as forests that have less tree mortality will likely be more resilient and regenerate more efficiently post-burn. The generalized linear model used to assess the relationship between thinning and tree mortality had an area under the curve of 0.710 from its modeled ROC values. While this model fit could be improved, it shows that the effect of thinning is more likely than data that we would have seen as a result of random chance. 
+
+## ASW: ROC/AUC isn't describing the probability of the effect itself -- it's describing the model's ability to classify "0s" and "1s" correctly.  AUC of 1.0 indicates perfect discrimination, while 0.5 indicates that the model isn't classifying values any better than a random guess would. But otherwise excellent answer!
+
+
 ```{r}
 treemortality <- read.csv("treemortality.csv")
 
@@ -88,12 +100,16 @@ plot_predictions(tree_mod, condition="thinning") #plotting marginal effects on t
 ## **2b) (2 pts)** The researchers explicitly considered the potential for confounding relationships related to tree size in their design and randomized their post-fire sampling by tree size. Given this information, do the researchers need to incorporate tree size into their glm to accurately estimate the effect of thinning? Why or why not?
 --> When the researchers randomized the study design by tree, they included an equal number of small and large trees. They did this because they were worried that by only sampling large or small trees, there would be a confounding effect on thinning and fire severity. By randomizing tree size, the contrasting effects of being a small or a large tree is averaged out because they are looking at an equal number of each. This allows us to isolate the effect of thinning alone without including tree size as a variable in the model.
 
+## ASW: excellent!!
+
 ## **2c) (5 pts)** The researchers submit their analysis for peer review, and one of the reviewers raises some concerns about the sampling methods. The researchers were unable to control the placement of forest thinning treatments (which are controlled by a variety of ecological, logistical, and political factors), so the reviewer is concerned about confounding relationships that might bias the thinning effect.
 
 ## In the reviewer’s experience, thinning treatments are not randomly applied across the landscape, and tend to occur in places that are easier to access with the heavy machinery required for thinning. For instance, steeper slopes might be less likely to be thinned, and they also tend to foster higher fire severities; similarly, forest patches that are farther from the road may also be less likely to be thinned and also experience higher fire severities, because they are farther away from firefighting/fire suppression activities the occur more commonly along roads. The reviewer sends the researchers the DAG below to summarize their concerns and asks the researchers to fit a new model that accounts for these confounding relationships. The researchers calculate the slope of the terrain around each sampled tree and how far each tree was from the nearest road, and add these variables (roaddist (in km), and slope (in degrees)) to their dataset.
 
 ## Refit the model from 2a to include the necessary variables to minimize bias in our estimation of the “thinning” variable, based on the reviewer’s proposed DAG (above). Does the effect of “thinning” change? If so, describe the degree of change and why the two models may differ in their conclusions. If needed, modify your model interpretation from 2a.
 --> I included both road distance and slope into the new model parameters. This still resulted in a significant effect of thinning on tree mortality, but the effect size was smaller. When road distance and slope are considered, thinning reduces tree mortality by 22.0%. Compared to the previous effect of 43.3%, including the new parameters had a meaningful effect on the results of this study. This is because road distance and slope impact both the predictor and response variable, leading us to inflate the effect of thinning on fire severity. Additionally, the model fit for the updated model structure is much better with an AUC value of 0.959. Including the variables for road distance and slope give us a more realistic value for the effect of thinning while also fitting the data more accurately.
+
+## ASW: wonderful answer!! perfect!
 ```{r}
 tree_mod_2<- glm(mortality ~ thinning + roaddist + slope, data = treemortality, family = binomial(link = "logit"))
 summary(tree_mod_2)
@@ -125,7 +141,9 @@ plot_predictions(tree_mod_2, condition="thinning") #visualizing the marginal eff
 
 ```
 
+## 19/20
 
+## ASW: nice work! 47/50
 
 
 
